@@ -1,0 +1,24 @@
+﻿@{
+    ViewData["Title"] = "Gerador de Script";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+<form asp-action="GerarScript" method="post" enctype="multipart/form-data">
+    <div class="form-group">
+        <label for="arquivo">Selecione um arquivo Word:</label>
+        <input type="file" class="form-control" name="arquivo" id="arquivo" required />
+    </div>
+    <button type="submit" class="btn btn-primary">Gerar Script</button>
+</form>
+
+@* Exibir erros, se houver *@
+@if (!ViewData.ModelState.IsValid)
+{
+    <div class="alert alert-danger mt-2">
+        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+        {
+            <p>@error.ErrorMessage</p>
+        }
+    </div>
+}

@@ -1,0 +1,48 @@
+﻿@{
+    ViewData["Title"] = "Script Gerado";
+}
+
+<h2>@ViewData["Title"]</h2>
+
+@if (ViewBag.Script != null)
+{
+    <h3>Script para o Selenium:</h3>
+
+
+    <button id="copyButton" class="btn btn-secondary">Copiar</button>
+    <button id="toggleButton" class="btn btn-secondary">Ocultar Código</button>
+
+    <pre id="scriptContent" style="background-color:#f4f4f4; padding: 10px; border-radius: 5px; font-family: 'Courier New', Courier, monospace; font-size: 14px; color: #333; border: 1px solid #ddd; overflow-x: auto; white-space: pre-wrap;">
+        @ViewBag.Script
+                                    </pre>
+
+    <!-- Botão para copiar -->
+
+    <script>
+        // Função para alternar entre ocultar e mostrar o código
+        document.getElementById('toggleButton').onclick = function() {
+            var scriptContent = document.getElementById('scriptContent');
+            var toggleButton = document.getElementById('toggleButton');
+
+            if (scriptContent.style.display === 'none') {
+                scriptContent.style.display = 'block';
+                toggleButton.textContent = 'Ocultar Código';
+            } else {
+                scriptContent.style.display = 'none';
+                toggleButton.textContent = 'Mostrar Código';
+            }
+        };
+
+        // Função para copiar o conteúdo do <pre> para a área de transferência
+        document.getElementById('copyButton').onclick = function() {
+            var scriptContent = document.getElementById('scriptContent').innerText;
+            navigator.clipboard.writeText(scriptContent).then(function() {
+                alert('Script copiado para a área de transferência!');
+            }).catch(function(error) {
+                alert('Erro ao copiar o script: ' + error);
+            });
+        };
+    </script>
+}
+
+<a href="@Url.Action("Index", "Word")" class="btn btn-primary">Voltar</a>
