@@ -76,7 +76,7 @@ namespace AutomacaoMec.Models
 
                     if (!string.IsNullOrWhiteSpace(textoAtual) && !textoAtual.EndsWith("\r\n"))
                     {
-                        textoAtual = textoAtual.Trim() + @"\r\n";
+                        textoAtual = textoAtual.Trim() + @"\r\n\r\n";
                     }
                 }
 
