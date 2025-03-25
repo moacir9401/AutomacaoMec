@@ -13,75 +13,70 @@ namespace AutomacaoMec.Models
         {
             var textos = new List<string>();
             string textoAtual = string.Empty;
-            bool comecou = false;  // Variável para controlar o início da extração após o primeiro título relevante
+            bool comecou = false; // Para controlar o início da extração após o primeiro título relevante
+            bool isTextoVermelho = true; // Para ignorar textos em vermelho
 
             using (WordprocessingDocument wordDoc = WordprocessingDocument.Open(caminhoArquivo, false))
             {
                 var body = wordDoc.MainDocumentPart.Document.Body;
 
-                var isTextoVermelho = true;
-                // Percorrendo todos os elementos de texto (run) no documento
                 foreach (var par in body.Elements<Paragraph>())
                 {
+                    string marcador = ObterMarcador(par); // Verifica se o parágrafo faz parte de uma lista
+                    string textoParagrafo = string.Empty;
+
                     foreach (var run in par.Elements<Run>())
                     {
-                        var texto = run.InnerText;
-                        var textoAux = run.InnerText;
+                        string texto = run.InnerText;
+                        string textoAux = run.InnerText;
 
-                        if ((texto.StartsWith("1.") || texto.StartsWith("2.") || texto.StartsWith("3.")))
+                        // Identifica início de uma nova seção
+                        if (textoAux.StartsWith("1.") || textoAux.StartsWith("2.") || textoAux.StartsWith("3."))
                         {
                             isTextoVermelho = true;
                         }
 
-                        if (isTextoVermelho)
-                        {
-                            texto = "";
-                        }
-                        // Ignorar se o texto está em vermelho (cor vermelha)
+                        // Ignora texto vermelho
                         var cor = run.RunProperties?.Color?.Val;
-                        if (cor != null && cor.Equals("FF0000"))  // Cor vermelha (Hex: #FF0000)
+                        if (cor != null && cor.Equals("FF0000")) // Cor vermelha (Hex: #FF0000)
                         {
                             isTextoVermelho = false;
-                            continue;  // Ignora o texto vermelho
-
+                            continue;
                         }
 
-                        // Iniciar a coleta de texto quando encontrar o título "1.", "2." ou "3."
+                        // Remove títulos e mantém a formatação correta
                         if (!comecou && (textoAux.StartsWith("1.") || textoAux.StartsWith("2.") || textoAux.StartsWith("3.")))
                         {
-                            comecou = true;  // Começar a coleta após o primeiro título relevante
+                            comecou = true;
                         }
 
-                        // Acumula o texto da seção atual, se já tiver começado a coleta
                         if (comecou)
                         {
-                            // Remover o título da linha (por exemplo, "1.1")
                             if (textoAux.StartsWith("1.") || textoAux.StartsWith("2.") || textoAux.StartsWith("3."))
                             {
-                                texto = RemoverTitulo(texto);  // Chama a função para remover o título da linha
+                                texto = RemoverTitulo(texto);
                             }
 
-                            textoAtual += texto + " ";
+                            textoParagrafo += texto + " ";
                         }
                     }
 
-                    // Se encontrar uma nova seção (com título válido), armazene o texto atual (se houver)
+                    if (!string.IsNullOrWhiteSpace(textoParagrafo))
+                    {
+                        // Adiciona o marcador de lista quando necessário
+                        textoAtual += (!string.IsNullOrEmpty(marcador) ? marcador : "") + textoParagrafo.Trim() + "\r\n";
+                    }
+
+                    // Se encontrou um novo título e há texto acumulado, adiciona à lista e reseta
                     if ((par.InnerText.StartsWith("1.") || par.InnerText.StartsWith("2.") || par.InnerText.StartsWith("3."))
                         && !string.IsNullOrEmpty(textoAtual.Trim()))
                     {
                         textos.Add(textoAtual.Trim());
-                        textoAtual = string.Empty;  // Resetar para a próxima seção
-                    }
-
-
-                    if (!string.IsNullOrWhiteSpace(textoAtual) && !textoAtual.EndsWith("\r\n"))
-                    {
-                        textoAtual = textoAtual.Trim() + @"\r\n\r\n";
+                        textoAtual = string.Empty;
                     }
                 }
 
-
-                // Adiciona o último texto se houver
+                // Adiciona o último bloco de texto se houver
                 if (!string.IsNullOrEmpty(textoAtual.Trim()))
                 {
                     textos.Add(textoAtual.Trim());
@@ -89,6 +84,13 @@ namespace AutomacaoMec.Models
             }
 
             return textos.ToArray();
+        }
+
+        // Método para detectar marcadores de lista corretamente
+        private string ObterMarcador(Paragraph par)
+        {
+            var numberingProperties = par.ParagraphProperties?.NumberingProperties;
+            return numberingProperties != null ? "●    " : string.Empty;
         }
 
         // Função para remover o título da linha (ex: "1.1 Políticas institucionais no âmbito do curso")
