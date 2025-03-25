@@ -64,7 +64,7 @@ namespace AutomacaoMec.Models
                     if (!string.IsNullOrWhiteSpace(textoParagrafo))
                     {
                         // Adiciona o marcador de lista quando necessário
-                        textoAtual += (!string.IsNullOrEmpty(marcador) ? marcador : "") + textoParagrafo.Trim() + "\r\n";
+                        textoAtual += (!string.IsNullOrEmpty(marcador) ? marcador : "") + textoParagrafo.Trim() + @"\r\n";
                     }
 
                     // Se encontrou um novo título e há texto acumulado, adiciona à lista e reseta
