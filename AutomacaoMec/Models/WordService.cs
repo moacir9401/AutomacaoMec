@@ -13,52 +13,91 @@ namespace AutomacaoMec.Models
         {
             var textos = new List<string>();
             string textoAtual = string.Empty;
-            bool comecou = false;  // Variável para controlar o início da extração (após 1.1)
+            bool comecou = false;  // Variável para controlar o início da extração após o primeiro título relevante
 
             using (WordprocessingDocument wordDoc = WordprocessingDocument.Open(caminhoArquivo, false))
             {
                 var body = wordDoc.MainDocumentPart.Document.Body;
 
+                var isTextoVermelho = true;
                 // Percorrendo todos os elementos de texto (run) no documento
                 foreach (var par in body.Elements<Paragraph>())
                 {
                     foreach (var run in par.Elements<Run>())
                     {
-                        // Extraímos o texto sem formatação (ignorando a cor vermelha ou qualquer estilo)
                         var texto = run.InnerText;
+                        var textoAux = run.InnerText;
 
+                        if ((texto.StartsWith("1.") || texto.StartsWith("2.") || texto.StartsWith("3.")))
+                        {
+                            isTextoVermelho = true;
+                        }
+
+                        if (isTextoVermelho)
+                        {
+                            texto = "";
+                        }
                         // Ignorar se o texto está em vermelho (cor vermelha)
                         var cor = run.RunProperties?.Color?.Val;
                         if (cor != null && cor.Equals("FF0000"))  // Cor vermelha (Hex: #FF0000)
                         {
+                            isTextoVermelho = false;
                             continue;  // Ignora o texto vermelho
+
                         }
 
-                        // Se o texto for da seção 1.1 em diante, começa a armazenar
-                        if (!comecou && texto.Contains("1.1"))
+                        // Iniciar a coleta de texto quando encontrar o título "1.", "2." ou "3."
+                        if (!comecou && (textoAux.StartsWith("1.") || textoAux.StartsWith("2.") || textoAux.StartsWith("3.")))
                         {
-                            comecou = true;
+                            comecou = true;  // Começar a coleta após o primeiro título relevante
                         }
 
+                        // Acumula o texto da seção atual, se já tiver começado a coleta
                         if (comecou)
                         {
+                            // Remover o título da linha (por exemplo, "1.1")
+                            if (textoAux.StartsWith("1.") || textoAux.StartsWith("2.") || textoAux.StartsWith("3."))
+                            {
+                                texto = RemoverTitulo(texto);  // Chama a função para remover o título da linha
+                            }
+
                             textoAtual += texto + " ";
                         }
                     }
 
-                    // Se o texto da seção atual for diferente de vazio, adicionar à lista de textos
-                    if (!string.IsNullOrEmpty(textoAtual.Trim()))
+                    // Se encontrar uma nova seção (com título válido), armazene o texto atual (se houver)
+                    if ((par.InnerText.StartsWith("1.") || par.InnerText.StartsWith("2.") || par.InnerText.StartsWith("3."))
+                        && !string.IsNullOrEmpty(textoAtual.Trim()))
                     {
                         textos.Add(textoAtual.Trim());
                         textoAtual = string.Empty;  // Resetar para a próxima seção
                     }
+                }
+
+                // Adiciona o último texto se houver
+                if (!string.IsNullOrEmpty(textoAtual.Trim()))
+                {
+                    textos.Add(textoAtual.Trim());
                 }
             }
 
             return textos.ToArray();
         }
 
+        // Função para remover o título da linha (ex: "1.1 Políticas institucionais no âmbito do curso")
+        private string RemoverTitulo(string texto)
+        {
+            // Encontrar o primeiro espaço após o número do título (ex: "1.1")
+            var posEspaco = texto.IndexOf(" ");
+            if (posEspaco > 0)
+            {
+                // Retornar a parte do texto após o primeiro espaço (removendo o título)
+                return texto.Substring(posEspaco).Trim();
+            }
 
+            // Se não encontrar o espaço (o que é improvável), retorna o texto original
+            return texto;
+        }
         // Método para gerar o script de preenchimento dos campos do formulário
         public string GerarScriptSelenium(string[] textos)
         {
@@ -67,7 +106,6 @@ namespace AutomacaoMec.Models
             // Adicionar o script para preencher os campos
 
             var IsPergunta = true;
-
 
             var valorQuestao = 0;
 
@@ -85,7 +123,6 @@ namespace AutomacaoMec.Models
                     continue;
                 }
 
-                var tbody1 = 23;
                 var valorTbody = "tbody1";
 
                 if (i <= 23)
@@ -99,7 +136,6 @@ namespace AutomacaoMec.Models
                         valorQuestao = 0;
                     }
                     valorTbody = "tbody2";
-
                 }
                 else
                 {
@@ -108,9 +144,7 @@ namespace AutomacaoMec.Models
                         valorQuestao = 0;
                     }
                     valorTbody = "tbody3";
-
                 }
-
 
                 var texto = textos[i].Replace("\r\n", " ").Replace("\n", " "); // Remover quebras de linha excessivas
                 script.AppendLine($"var  tbody = document.getElementById('{valorTbody}');");
@@ -127,4 +161,3 @@ namespace AutomacaoMec.Models
         }
     }
 }
-
