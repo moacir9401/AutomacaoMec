@@ -72,7 +72,14 @@ namespace AutomacaoMec.Models
                         textos.Add(textoAtual.Trim());
                         textoAtual = string.Empty;  // Resetar para a próxima seção
                     }
+
+
+                    if (!string.IsNullOrWhiteSpace(textoAtual) && !textoAtual.EndsWith("\r\n"))
+                    {
+                        textoAtual = textoAtual.Trim() + @"\r\n";
+                    }
                 }
+
 
                 // Adiciona o último texto se houver
                 if (!string.IsNullOrEmpty(textoAtual.Trim()))
@@ -146,7 +153,7 @@ namespace AutomacaoMec.Models
                     valorTbody = "tbody3";
                 }
 
-                var texto = textos[i].Replace("\r\n", " ").Replace("\n", " "); // Remover quebras de linha excessivas
+                var texto = textos[i]; // Remover quebras de linha excessivas
                 script.AppendLine($"var  tbody = document.getElementById('{valorTbody}');");
                 script.AppendLine($"var tr{i} = tbody.querySelector('#Questao{valorQuestao}');");
                 script.AppendLine($"var textarea{i} = tr{i}.querySelector('textarea');");
